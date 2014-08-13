@@ -1,0 +1,8 @@
+java -jar /usr/local/bin/selenium-server-standalone-2.42.1.jar -browserSessionReuse -Dwebdriver.chrome.driver=/usr/local/bin/chromedriververbose
+
+
+vendor/bin/paratest -p 2 -f --phpunit=vendor/bin/phpunit accounts/go-alerts-test.php
+
+phpunit --filter=test_large
+
+no origin push: git remote set-url --push origin no_push

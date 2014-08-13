@@ -1,0 +1,342 @@
+	/**
+	 * Navigates to homepage (accounts) and logs out
+	 * @param  string $size current window size
+	 */
+	public function do_logout_action( $size )
+	{
+		$homepage = '.header.primary h1 a';
+
+		if ( $size == 'small' )
+		{
+			//navigate back to the account homepage
+			$homepage_check = $this->conditional_sleep_check( $homepage );
+			$homepage_check->click();
+
+			//open left nav
+			$left_nav = $this->conditional_sleep_check( '#nav-toggle' );
+			$left_nav->click();
+
+			//find logout button and click
+			$logout = $this->conditional_sleep_check( '.sidepanel.primary.left.exposed .logout a' );
+			$this->assertEquals( 'Sign Out', $logout->attribute( 'innerText' ), 'Missing signout' );
+			$this->assertContains( $this->accounts_url . '/subscription/sign-out/', $logout->attribute( 'href' ), 'Incorrect signout href' );
+			$logout->click();
+		}//end if
+		else
+		{
+			//navigate back to the account homepage
+			$homepage_check = $this->conditional_sleep_check( $homepage );
+			$homepage_check->click();
+			sleep( 1 ); //required sleep
+
+			//check for MY ACCOUNT drop-down
+			$this->assertNotNull( $this->byLinkText( 'MY ACCOUNT' ), 'Missing account profile link in menu bar' );
+			$this->byLinkText( 'MY ACCOUNT' )->click();
+
+			//find logout button and click
+			$logout = $this->conditional_sleep_check( '.icons.right .logout a' );
+			$this->assertEquals( 'Sign Out', $logout->attribute( 'innerText' ), 'Missing signout' );
+			$this->assertContains( $this->accounts_url . '/subscription/sign-out/', $logout->attribute( 'href' ), 'Incorrect signout href' );
+			$logout->click();
+		}//end else
+	}//end do_logout_action
+
+
+	/**
+	 * Checks for presence of social links and create
+	 * account information
+	 */
+	public function check_social_pane()
+	{
+		$selector = '#cboxLoadedContent .social';
+		$buttons = $selector . ' .buttons';
+		$why = $selector . ' .why-details';
+		$paragraph = 'We will never post to your social networks unless you share something. Terms and Privacy.';
+
+		//pane title
+		$title = $this->byCssSelector_limit( $selector . ' h3' );
+		$this->assertEquals( 'Or sign in via social media', $title->attribute( 'innerHTML' ), 'Pane title incorrect' );
+
+		//linkedin checking
+		$linkedin = $this->byCssSelector_limit( $buttons . ' .linkedin' );
+		$this->assertEquals( 'LinkedIn', $linkedin->text(), 'Missing LinkedIn' );
+		$linkedin_link = $this->byCssSelector_limit( $buttons. ' .linkedin a' );
+		$this->assertContains( 'service=linkedin&type=authenticate', $linkedin_link->attribute( 'href' ), 'Incorrect link href' );
+
+		//twitter checking
+		$twitter = $this->byCssSelector_limit( $buttons . ' .twitter' );
+		$this->assertEquals( 'Twitter', $twitter->text(), 'Missing Twitter' );
+		$twitter_link = $this->byCssSelector_limit( $buttons. ' .twitter a' );
+		$this->assertContains( 'service=twitter&type=authenticate', $twitter_link->attribute( 'href' ), 'Incorrect link href' );
+
+		//facebook checking
+		$facebook = $this->byCssSelector_limit( $buttons . ' .facebook' );
+		$this->assertEquals( 'Facebook', $facebook->text(), 'Missing Facebook' );
+		$facebook_link = $this->byCssSelector_limit( $buttons. ' .facebook a' );
+		$this->assertContains( 'service=facebook&type=authenticate', $facebook_link->attribute( 'href' ), 'Incorrect link href' );
+
+		//why checking and click
+		$why_check = $this->byCssSelector_limit( $selector . ' .why' );
+		$this->assertEquals( 'Why?', $why_check->text(), 'Missing Why section' );
+		$why_check->click();
+		sleep( 1 );
+
+		//checking presence of why details
+		$why_details = $this->byCssSelector_limit( $why . ' li', 3 );
+
+		//checking correct social disclaimer
+		$why_paragraph = $this->byCssSelector_limit( $why . ' p' );
+		//$this->assertEquals( $paragraph, $why_paragraph->attribute( 'innerText' ), 'Missing social disclaimer' );
+
+		//checking the links in why section
+		$why_links = $this->byCssSelector_limit( $why . ' p a', 2 );
+		$this->assertEquals( $this->accounts_url . '/terms-of-service/', $why_links[0]->attribute( 'href' ), 'Incorrect ToS href' );
+		$this->assertEquals( $this->accounts_url . '/privacy-policy/', $why_links[1]->attribute( 'href' ), 'Incorrect privacy href' );
+
+		//close out why dialog
+		$why_check->click();
+
+		//checking create account section
+		$create = $this->byCssSelector_limit( '#cboxLoadedContent .create a' );
+		$this->assertEquals( 'Sign up for a free 7 day trial', $create->text(), 'Missing trial text' );
+	}//end check_social_pane
+
+
+	/**
+	 * Verifies the presence of all login pane fields
+	 */
+	public function check_login_pane()
+	{
+		$selector = '#cboxLoadedContent #go-remote-identity-login';
+
+		//pane title checking
+		$sign_in = $this->byCssSelector_limit( $selector . ' h3' );
+		$this->assertEquals( 'Sign in', $sign_in->attribute( 'innerHTML' ), 'Missing Sign In text' );
+
+		//email checking
+		$email = $this->byCssSelector_limit( $selector . ' li.email label' );
+		$this->assertEquals( 'Email address', $email->attribute( 'innerHTML' ), 'Missing email field' );
+		$this->byCssSelector_limit( $selector . ' li.email input' );
+
+		//password checking
+		$password = $this->byCssSelector_limit( $selector . ' li.password label' );
+		$this->assertEquals( 'Password', $password->attribute( 'innerHTML' ), 'Missing password field' );
+		$this->byCssSelector_limit( $selector . ' li.password input' );
+
+		//check remember me presence
+		$remember = $this->byCssSelector_limit( $selector . ' li.remember label' );
+		$this->assertEquals( 'Remember me', $remember->attribute( 'innerHTML' ), 'Missing remember me checkbox' );
+		$this->byCssSelector_limit( $selector . ' li.remember input' );
+
+		//check actions presence
+		$action = $this->byCssSelector_limit( $selector . ' li.actions button' );
+		$this->assertEquals( 'Continue', $action->attribute( 'innerHTML' ), 'Missing Continue button' );
+		$this->assertEquals( 'submit', $action->attribute( 'type' ) );
+		$action_link = $this->byCssSelector_limit( $selector . ' li.actions a' );
+		$this->assertEquals( 'Forgot your password?', $action_link->attribute( 'innerHTML' ), 'Missing forgot password' );
+	}//end check_login_pane
+
+
+/**
+	 * Tries creating duplicate alert
+	 */
+	public function create_duplicate()
+	{
+		$selector = '.profile-go-alerts .large-block-grid-3.small-block-grid-1 li:nth-child(3) a.button';
+		$size = $this->window_width();
+
+		//navigate back to alerts page
+		$this->goto_alerts( $size );
+
+		//verify alert was added correctly
+		$this->verify_weekly_alert();
+
+		//creating duplicate alert
+		$duplicate = $this->byCssSelector_limit( $selector );
+		$duplicate->click();
+		sleep( 1 );
+
+		//check presence of common alert fields
+		$this->check_alert_pane();
+
+		//attempt to save alert
+		$save = $this->conditional_sleep_check( '.edit-ui .button.primary' );
+		$save->click();
+
+		//verify alert error is visible
+		$error = $this->conditional_sleep_check( '.alert-error' );
+		$this->assertTrue( $error->displayed(), 'Duplicate alert error not visible' );
+
+		//close alert pane
+		$close = $this->conditional_sleep_check( '#cboxClose .goicon.icon-x' );
+		$close->click();
+
+		$this->dismiss_event_balloon();
+		sleep( 1 );
+	}//end create_duplicate
+
+	/**
+	 * Adds specified facet to first alert's facets
+	 * @param  string $facet facet to interface with
+	 */
+	public function goto_edit( $facet )
+	{
+		$size = $this->window_width();
+		$save = '#go-messagearea .button.save';
+
+		//navigate to alerts
+		$this->goto_alerts( $size );
+
+		//find and click on edit alert
+		$edit_alert = $this->conditional_sleep_check( '.go-alerts-schedule:nth-child(1) a' );
+		$this->assertContains( 'http://search.gigaom.com/', $edit_alert->attribute( 'href' ), 'Incorrect edit href' );
+		$edit_alert->click();
+		sleep( 1 );
+
+		//add the facet
+		$this->add_facets( $facet );
+
+		//save
+		$save_check = $this->conditional_sleep_check( $save );
+		$save_check->click();
+		sleep( 1 ); //required sleep
+		$this->check_manage();
+
+	}//end goto_edit
+
+		/**
+	 * Checks for correct alerts page fields
+	 */
+	public function check_alerts_page()
+	{
+		$selector = '.profile-go-alerts';
+		$subheaders = $selector . ' h2';
+		$size = $this->window_width();
+
+		//navigate back to alerts page
+		$this->goto_alerts( $size );
+
+		//checking correct email displayed
+		$email = $this->byCssSelector_limit( $selector . ' .email-address' );
+		$this->assertEquals( $this->login_creds['username'], $email->attribute( 'innerText' ), 'Incorrect user email' );
+
+		//correct amount of subheaders: My Alerts and Popular Alerts
+		$subheader_check = $this->byCssSelector_limit( $subheaders, 2 );
+		$this->assertEquals( 'MY ALERTS', $subheader_check[0]->attribute( 'innerText' ), 'Missing My Alerts' );
+		$this->assertEquals( 'POPULAR ALERTS', $subheader_check[1]->attribute( 'innerText' ), 'Missing Popular Alerts' );
+
+		//confirm correct creation labeling
+		$create = $this->byCssSelector_limit( $selector . ' .header' );
+		$this->assertEquals( 'Create an Alert', $create->attribute( 'innerText' ), 'Missing create and alert' );
+
+		//confirm 3 popular alerts
+		$this->byCssSelector_limit( '.large-block-grid-3 .boxed', 3 );
+	}//end check_alerts_page
+
+
+	/**
+	 * Queue all alert creation functions
+	 */
+	public function do_alerts_action()
+	{
+		//first alert
+		$this->create_suggested_alert();
+		sleep( 1 );
+		//adding people facet
+		$this->goto_edit( '#scriblio_facets-11' );
+
+		//second alert
+		$this->create_daily_alert();
+		sleep( 1 );
+		//adding content type facet
+		$this->goto_edit( '#scriblio_facets-3' );
+
+		//third alert and checking duplicates
+		$this->create_weekly_alert();
+		sleep( 1 );
+		$this->create_duplicate();
+		sleep( 1 );
+		//adding access facet
+		$this->goto_edit( '#scriblio_facets-10' );
+
+		//fourth alert
+		$this->create_fourth_alert();
+		//adding property facet
+		$this->goto_edit( '#scriblio_facets-5' );
+
+		//cleanup
+		$this->cleanup_alerts();
+	}//end do_alerts_action
+
+	public function check_keywords()
+	{
+		$size = $this->window_width();
+
+		//$this->do_search( $size );
+
+		//make sure create alert button isn't on page
+		$this->byCssSelector_limit( '.button.create', 0 );
+
+		//add 'consumer electronics' tag
+		sleep( 2 ); //required sleep
+		$this->add_facets( '#scriblio_facets-2' );
+		sleep( 1 );
+
+		//remove keyword facet
+		$close_facet = $this->conditional_sleep_check( '.facets > li:nth-child(2) .close a' );
+		$close_facet->click();
+
+		//check that create alert button is now present
+		$button = $this->conditional_sleep_check( '.button.create' );
+		$this->assertTrue( $button->displayed(), 'Create alert button not visible' );
+
+		//add author facet
+		$this->add_facets( '#scriblio_facets-8' );
+		sleep( 1 );
+
+		//make sure create alert button isn't on page
+		$this->byCssSelector_limit( '.button.create', 0 );
+
+		//remove author facet
+		$close_author = $this->conditional_sleep_check( '.facets > li:nth-child(4) .close a' );
+		$close_author->click();
+
+		//check that create alert button is now present
+		$button = $this->conditional_sleep_check( '.button.create' );
+		$this->assertTrue( $button->displayed(), 'Create alert button not visible' );
+	}//end check_keywords
+
+	public function do_search( $size )
+	{
+		if ( $size != 'large' )
+		{
+			$button = $this->conditional_sleep_check( '.nav-search > a' );
+			$button->click();
+			sleep( 1 );
+
+			$search = $this->byCssSelector_limit( '.scrib-authority-box > input' );
+			$search->value( 'google' );
+			$this->keys( Keys::ENTER );
+			sleep( 2 );
+		}//end if
+		else
+		{
+			//enter search term and press enter
+			$search = $this->conditional_sleep_check( '.scrib-authority-box > input' );
+			$search->value( 'google' );
+			$this->keys( Keys::ENTER );
+			sleep( 2 );
+		}//end else
+	}//end do_search
+
+
+	public function test_baseball_cards()
+	{
+		$analysts = $this->css->value( '#body article' );
+		$count = count( $analysts );
+
+		//make sure there are more than 1 but less than 11
+		$this->assertGreaterThanOrEqual( $count, 2 );
+		$this->assertLessThanOrEqual( 10, $count );
+	}//end test_baseball_cards
+
